@@ -92,7 +92,8 @@ cd chatgpt_academic
 
 2. 配置API_KEY
 
-在`config.py`中，配置 Proxy 和 OpenAI API KEY，说明如下
+在`config.py`中，配置 [Proxy](https://github.com/binary-husky/gpt_academic/issues/1) 和 OpenAI API KEY。
+
 （P.S. 程序运行时会优先检查是否存在名为`config_private.py`的私密配置文件，并用其中的配置覆盖`config.py`的同名配置。因此，如果您能理解我们的配置读取逻辑，我们强烈建议您在`config.py`旁边创建一个名为`config_private.py`的新配置文件，并把`config.py`中的配置转移（复制）到`config_private.py`中。`config_private.py`不受git管控，可以让您的隐私信息更加安全。）
 
 
@@ -132,7 +133,7 @@ python main.py
 # 下载项目
 git clone https://github.com/binary-husky/chatgpt_academic.git
 cd chatgpt_academic
-# 配置 “海外Proxy”， “API_KEY” 以及 “WEB_PORT” (例如50923) 等
+# 配置 “Proxy”， “API_KEY” 以及 “WEB_PORT” (例如50923) 等
 用任意文本编辑器编辑 config.py
 # 安装
 docker build -t gpt-academic .
