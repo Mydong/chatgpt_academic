@@ -25,14 +25,14 @@ def eval_manim(code):
     def get_class_name(class_string):
         import re
         # Use regex to extract the class name
-        class_name = re.search(r'class (\w+)\(Scene\)', class_string).group(1)
+        class_name = re.search(r'class (\w+)\(', class_string).group(1)
         return class_name
 
     class_name = get_class_name(code)
 
     try: 
         subprocess.check_output([sys.executable, '-c', f"from gpt_log.MyAnimation import {class_name}; {class_name}().render()"])
-        shutil.copyfile('media/videos/1080p60/MyAnimation.mp4', f'gpt_log/{gen_time_str()}.mp4')
+        shutil.move('media/videos/1080p60/{class_name}.mp4', f'gpt_log/{class_name}-{gen_time_str()}.mp4')
         return f'gpt_log/{gen_time_str()}.mp4'
     except subprocess.CalledProcessError as e:
         output = e.output.decode()
@@ -68,7 +68,7 @@ def 动画生成(txt, llm_kwargs, plugin_kwargs, chatbot, history, system_prompt
     # 基本信息：功能、贡献者
     chatbot.append([
         "函数插件功能？",
-        "生成数学动画, 作者: binary-husky, 插件初始化中 ..."
+        "生成数学动画, 此插件处于开发阶段, 建议暂时不要使用, 作者: binary-husky, 插件初始化中 ..."
     ])
     yield from update_ui(chatbot=chatbot, history=history) # 刷新界面
 
@@ -86,7 +86,7 @@ def 动画生成(txt, llm_kwargs, plugin_kwargs, chatbot, history, system_prompt
         llm_kwargs=llm_kwargs, chatbot=chatbot, history=demo, 
         sys_prompt=
         r"Write a animation script with 3blue1brown's manim. "+
-        r"Please begin with `from manim import *` and name the class as `MyAnimation`. " + 
+        r"Please begin with `from manim import *`. " + 
         r"Answer me with a code block wrapped by ```."
     )
     chatbot.append(["开始生成动画", "..."])
@@ -102,12 +102,12 @@ def 动画生成(txt, llm_kwargs, plugin_kwargs, chatbot, history, system_prompt
 
 # 在这里放一些网上搜集的demo，辅助gpt生成代码
 def examples_of_manim():
-    return """
+    return r"""
 
 
 ```
-# Moving Group To Destination
-class MyAnimation(Scene):
+
+class MovingGroupToDestination(Scene):
     def construct(self):
         group = VGroup(Dot(LEFT), Dot(ORIGIN), Dot(RIGHT, color=RED), Dot(2 * RIGHT)).scale(1.4)
         dest = Dot([4, 3, 0], color=YELLOW)
@@ -119,8 +119,8 @@ class MyAnimation(Scene):
 
 
 ```
-# Moving FrameBox
-class MyAnimation(Scene):
+
+class LatexWithMovingFramebox(Scene):
     def construct(self):
         text=MathTex(
             "\\frac{d}{dx}f(x)g(x)=","f(x)\\frac{d}{dx}g(x)","+",
@@ -143,8 +143,8 @@ class MyAnimation(Scene):
 
 
 ```
-# Point With Trace
-class MyAnimation(Scene):
+
+class PointWithTrace(Scene):
     def construct(self):
         path = VMobject()
         dot = Dot()
@@ -164,43 +164,28 @@ class MyAnimation(Scene):
 ```
 
 ```
-# SinAndCosFunctionPlot
-class MyAnimation(Scene):
+
+# do not use get_graph, this funciton is deprecated
+
+class ExampleFunctionGraph(Scene):
     def construct(self):
-        axes = Axes(
-            x_range=[-10, 10.3, 1],
-            y_range=[-1.5, 1.5, 1],
-            x_length=10,
-            axis_config={"color": GREEN},
-            x_axis_config={
-                "numbers_to_include": np.arange(-10, 10.01, 2),
-                "numbers_with_elongated_ticks": np.arange(-10, 10.01, 2),
-            },
-            tips=False,
-        )
-        axes_labels = axes.get_axis_labels()
-        sin_graph = axes.plot(lambda x: np.sin(x), color=BLUE)
-        cos_graph = axes.plot(lambda x: np.cos(x), color=RED)
-
-        sin_label = axes.get_graph_label(
-            sin_graph, "\\sin(x)", x_val=-10, direction=UP / 2
-        )
-        cos_label = axes.get_graph_label(cos_graph, label="\\cos(x)")
-
-        vert_line = axes.get_vertical_line(
-            axes.i2gp(TAU, cos_graph), color=YELLOW, line_func=Line
-        )
-        line_label = axes.get_graph_label(
-            cos_graph, "x=2\pi", x_val=TAU, direction=UR, color=WHITE
+        cos_func = FunctionGraph(
+            lambda t: np.cos(t) + 0.5 * np.cos(7 * t) + (1 / 7) * np.cos(14 * t),
+            color=RED,
         )
 
-        plot = VGroup(axes, sin_graph, cos_graph, vert_line)
-        labels = VGroup(axes_labels, sin_label, cos_label, line_label)
-        self.add(plot, labels)
+        sin_func_1 = FunctionGraph(
+            lambda t: np.sin(t) + 0.5 * np.sin(7 * t) + (1 / 7) * np.sin(14 * t),
+            color=BLUE,
+        )
+
+        sin_func_2 = FunctionGraph(
+            lambda t: np.sin(t) + 0.5 * np.sin(7 * t) + (1 / 7) * np.sin(14 * t),
+            x_range=[-4, 4],
+            color=GREEN,
+        ).move_to([0, 1, 0])
+
+        self.add(cos_func, sin_func_1, sin_func_2)
 
 ```
-
-
-
-
 """
