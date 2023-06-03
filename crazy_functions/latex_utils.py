@@ -62,7 +62,7 @@ def mod_inbraket(match):
     # return the modified string as the replacement
     return "\\" + cmd + "{" + str_to_modify + "}"
 
-def fix_content(final_tex):
+def fix_content(final_tex, node_string):
     """
         fix common GPT errors to increase success rate
     """
@@ -85,7 +85,7 @@ class LatexPaperSplit():
             if node.preserve:
                 result_string += node.string
             else:
-                result_string += fix_content(arr[p])
+                result_string += fix_content(arr[p], node.string)
                 p += 1
             node = node.next
             if node is None: break
@@ -141,17 +141,19 @@ class LatexPaperSplit():
                         lt = aft
                 lt = lt.next
                 cnt += 1
-                print(cnt)
+                # print(cnt)
                 if lt is None: break
 
         # root 是链表的头
-        print('正在分解Latex源文件')
+        print('正在分解Latex源文件，构建链表结构')
         split_worker(root, r"(.*?)\\maketitle", re.DOTALL)
         split_worker(root, r"\\section\{(.*?)\}")
         split_worker(root, r"\\subsection\{(.*?)\}")
         split_worker(root, r"\\subsubsection\{(.*?)\}")
         split_worker(root, r"\\bibliography\{(.*?)\}")
         split_worker(root, r"\\bibliographystyle\{(.*?)\}")
+        split_worker(root, r"\\begin\{wrapfigure\}(.*?)\\end\{wrapfigure\}", re.DOTALL)
+        split_worker(root, r"\\begin\{wrapfigure\*\}(.*?)\\end\{wrapfigure\*\}", re.DOTALL)
         split_worker(root, r"\\begin\{figure\}(.*?)\\end\{figure\}", re.DOTALL)
         split_worker(root, r"\\begin\{figure\*\}(.*?)\\end\{figure\*\}", re.DOTALL)
         split_worker(root, r"\\begin\{table\}(.*?)\\end\{table\}", re.DOTALL)
@@ -182,7 +184,7 @@ class LatexPaperSplit():
             while True:
                 if not node.preserve:
                     res_to_t.append(node.string)
-                    f.write(node.string + '\n ========================= \n')
+                f.write(node.string)
                 node = node.next
                 if node is None: break
 
@@ -311,7 +313,7 @@ def Latex精细分解与转化(file_manifest, project_folder, llm_kwargs, plugin
 
     #  <-------- 写出文件 ----------> 
     msg = f"当前大语言模型: {llm_kwargs['llm_model']}，当前语言模型温度设定: {llm_kwargs['temperature']}。"
-    final_tex = lps.merge_result(pfg.sp_file_result, mode, msg)
+    final_tex = lps.merge_result(pfg.file_result, mode, msg)
     with open(project_folder + f'/merge_{mode}.tex', 'w', encoding='utf-8', errors='replace') as f:
         f.write(final_tex)
 
@@ -413,7 +415,7 @@ def 编译Latex差别(chatbot, history, main_file_original, main_file_modified, 
             os.chdir(current_dir)
             return True # 成功啦
         else:
-            if n_fix>=10: break
+            if n_fix>=7: break
             n_fix += 1
             can_retry, main_file_modified, buggy_lines = remove_buggy_lines(
                 file_path=pj(work_folder_modified, f'{main_file_modified}.tex'), 
