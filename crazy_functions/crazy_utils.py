@@ -130,6 +130,11 @@ def request_gpt_model_in_new_thread_with_ui_alive(
     yield from update_ui(chatbot=chatbot, history=[]) # 如果最后成功了，则删除报错信息
     return final_result
 
+def can_multi_process(llm):
+    if llm.startswith('gpt-'): return True
+    if llm.startswith('api2d-'): return True
+    if llm.startswith('azure-'): return True
+    return False
 
 def request_gpt_model_multi_threads_with_very_awesome_ui_and_high_efficiency(
         inputs_array, inputs_show_user_array, llm_kwargs, 
@@ -175,7 +180,7 @@ def request_gpt_model_multi_threads_with_very_awesome_ui_and_high_efficiency(
         except: max_workers = 8
         if max_workers <= 0: max_workers = 3
     # 屏蔽掉 chatglm的多线程，可能会导致严重卡顿
-    if not (llm_kwargs['llm_model'].startswith('gpt-') or llm_kwargs['llm_model'].startswith('api2d-')):
+    if not can_multi_process(llm_kwargs['llm_model']):
         max_workers = 1
         
     executor = ThreadPoolExecutor(max_workers=max_workers)
@@ -698,3 +703,51 @@ def try_install_deps(deps):
     for dep in deps:
         import subprocess, sys
         subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--user', dep])
+
+
+class construct_html():
+    def __init__(self) -> None:
+        self.css = """
+.row {
+  display: flex;
+  flex-wrap: wrap;
+}
+
+.column {
+  flex: 1;
+  padding: 10px;
+}
+
+.table-header {
+  font-weight: bold;
+  border-bottom: 1px solid black;
+}
+
+.table-row {
+  border-bottom: 1px solid lightgray;
+}
+
+.table-cell {
+  padding: 5px;
+}
+        """
+        self.html_string = f'<!DOCTYPE html><head><meta charset="utf-8"><title>翻译结果</title><style>{self.css}</style></head>'
+
+
+    def add_row(self, a, b):
+        tmp = """
+<div class="row table-row">
+    <div class="column table-cell">REPLACE_A</div>
+    <div class="column table-cell">REPLACE_B</div>
+</div>
+        """
+        from toolbox import markdown_convertion
+        tmp = tmp.replace('REPLACE_A', markdown_convertion(a))
+        tmp = tmp.replace('REPLACE_B', markdown_convertion(b))
+        self.html_string += tmp
+
+
+    def save_file(self, file_name):
+        with open(f'./gpt_log/{file_name}', 'w', encoding='utf8') as f:
+            f.write(self.html_string.encode('utf-8', 'ignore').decode())
+
